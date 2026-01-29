@@ -1,0 +1,134 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL") // Opcional, mas recomendado para o Supabase
+}
+
+enum Level {
+  ADMIN
+  COORDINATOR
+  PLAYER
+}
+
+enum PIFEType {
+  Profissional
+  Intelectual
+  Físico
+  Emocional
+}
+
+model Usuario {
+  id String @id @default(uuid())
+  name String
+  email String @unique
+  password String
+  image String?
+  level Level
+  role String?   // Cargo (Ex: Gerente)
+  department String?   // Departamento
+  managerId String?   // ID do Chefe
+  manager Usuario?  @relation("ManagerSubordinates", fields: [managerId], references: [id])
+  subordinates  Usuario[] @relation("ManagerSubordinates")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  CheckinPife CheckinPife[]
+  Like Like[]
+  Comment Comment[]
+  AcelerarOiCriado AcelerarOi[] @relation("AcelerarOiAutor")
+  AcelerarOiRecebido AcelerarOi[] @relation("AcelerarOiDestinatario")
+  LikeAcelerarOi LikeAcelerarOi[]
+  CommentAcelerarOi CommentAcelerarOi[]
+  squadId String?
+  squad Squad? @relation(fields: [squadId], references: [id])
+}
+
+model CheckinPife {
+  id String @id @default(uuid())
+  userId String
+  user Usuario @relation(fields: [userId], references: [id])
+  description String
+  pife PIFEType
+  image String?
+  link String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Like Like[]
+  Comment Comment[]
+}
+
+model Like {
+  id String @id @default(uuid())
+  userId String
+  user Usuario @relation(fields: [userId], references: [id])
+  checkinPifeId String
+  checkinPife CheckinPife @relation(fields: [checkinPifeId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Comment {
+  id String @id @default(uuid())
+  userId String
+  user Usuario @relation(fields: [userId], references: [id])
+  checkinPifeId String
+  checkinPife CheckinPife @relation(fields: [checkinPifeId], references: [id])
+  content String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+
+model AcelerarOi {
+  id String @id @default(uuid())
+  autorId String
+  autor Usuario @relation("AcelerarOiAutor", fields: [autorId], references: [id])
+  destinatarioId String
+  destinatario Usuario @relation("AcelerarOiDestinatario", fields: [destinatarioId], references: [id])
+  message String
+  image String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  LikeAcelerarOi LikeAcelerarOi[]
+  CommentAcelerarOi CommentAcelerarOi[]
+}
+
+model LikeAcelerarOi {
+  id String @id @default(uuid())
+  userId String
+  user Usuario @relation(fields: [userId], references: [id])
+  acelerarOiId String
+  acelerarOi AcelerarOi @relation(fields: [acelerarOiId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, acelerarOiId])
+}
+
+model CommentAcelerarOi {
+  id String @id @default(uuid())
+  userId String
+  user Usuario @relation(fields: [userId], references: [id])
+  acelerarOiId String
+  acelerarOi AcelerarOi @relation(fields: [acelerarOiId], references: [id], onDelete: Cascade)
+  content String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Squad {
+  id        String    @id @default(cuid())
+  name      String    // Nome da Squad (Ex: Financeiro, Tech)
+  users     Usuario[] // Uma squad tem vários usuários
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
