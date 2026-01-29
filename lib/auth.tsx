@@ -1,6 +1,7 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import prisma from "./prisma";
+import bcrypt from "bcryptjs"; // ADICIONADO: Importação correta do bcryptjs
 
 declare module "next-auth" {
   interface User {
@@ -32,21 +33,19 @@ const nextAuthOptions: NextAuthOptions = {
         email: { label: "Email", type: "text" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials, req) {
+      async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
           return null;
         }
 
         try {
-          // Primeiro tenta encontrar um usuário normal
           const user = await prisma.usuario.findUnique({
-            where: {
-              email: credentials.email,
-            },
+            where: { email: credentials.email },
           });
 
-          if (user) {
-            const passwordMatch = credentials.password === user.password;
+          if (user && user.password) {
+            // AJUSTE CRÍTICO: Compara a senha digitada com o Hash do banco usando bcryptjs
+            const passwordMatch = await bcrypt.compare(credentials.password, user.password);
 
             if (passwordMatch) {
               return {
@@ -59,21 +58,20 @@ const nextAuthOptions: NextAuthOptions = {
               };
             }
           }
-
           return null;
         } catch (error) {
+          console.error("Erro na autenticação:", error);
           return null;
         }
       },
     }),
   ],
-  jwt: {
-   secret: "minhasenha_super_secreta_123",
-  },
+  // IMPORTANTE: Use a variável de ambiente NEXTAUTH_SECRET que configuramos na Vercel
+  secret: process.env.NEXTAUTH_SECRET, 
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.user = user;
+        token.id = user.id;
         token.squad = user.squad;
         token.level = user.level;
         token.image = user.image;
@@ -81,16 +79,11 @@ const nextAuthOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, token }) {
-      if (token.user && typeof token.user === "object") {
-        const userToken = token.user as any;
-        session.user = {
-          id: userToken.id || null,
-          name: userToken.name || null,
-          email: userToken.email || null,
-          squad: userToken.squad || null,
-          level: userToken.level || null,
-          image: userToken.image || null,
-        };
+      if (token && session.user) {
+        session.user.id = token.id as string;
+        session.user.squad = token.squad as string;
+        session.user.level = token.level as string;
+        session.user.image = token.image as string;
       }
       return session;
     },
