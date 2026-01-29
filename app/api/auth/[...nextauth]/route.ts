@@ -1,6 +1,29 @@
-import nextAuthOptions from "@/lib/auth";
-import NextAuth from "next-auth";
+// No topo do arquivo, use bcryptjs em vez de bcrypt
+import bcrypt from "bcryptjs"; 
 
-const handler = NextAuth(nextAuthOptions);
+// Dentro do CredentialsProvider
+async authorize(credentials) {
+  if (!credentials?.email || !credentials?.password) return null;
 
-export { handler as GET, handler as POST };
+  const user = await prisma.usuario.findUnique({
+    where: { email: credentials.email }
+  });
+
+  // Se não achar o usuário ou a senha estiver vazia no banco
+  if (!user || !user.password) return null;
+
+  // COMPARAÇÃO CRÍTICA
+  const isPasswordValid = await bcrypt.compare(
+    credentials.password,
+    user.password
+  );
+
+  if (!isPasswordValid) return null;
+
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    level: user.level,
+  };
+}
