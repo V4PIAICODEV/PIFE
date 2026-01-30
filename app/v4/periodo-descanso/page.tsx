@@ -214,13 +214,7 @@ export default function PeriodoDescansoPage() {
                     <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
                     <div className="text-sm text-blue-800">
                       <p>
-                        Por lei, o profissional CLT pode pedir Período de Descanso após trabalhar por um ano, e o
-                        empregador tem até 12 meses para concedê-las. Nisso, há direito a 30 dias corridos de Período de
-                        Descanso, que podem ser fracionados em até 3x, desde que um dos períodos seja de pelo menos 14
-                        dias e os demais não sejam inferiores a 5. O fracionamento deve ser acordado entre empregador e
-                        empregado. Ao solicitar abono de Período de Descanso, atente-se ao prazo, pois o abono de
-                        Período de Descanso deverá ser requerido até 15 (quinze) dias antes do término do período
-                        aquisitivo.
+                        Periodo de descanso que foi alinhado previamente.
                       </p>
                     </div>
                   </div>
