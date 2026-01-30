@@ -27,7 +27,8 @@ export async function PUT(request: Request) {
     const formData = await request.formData();
 
     const name = formData.get("name") as string;
-    const squad = formData.get("squad") as string | null;
+    // Alterado de 'squad' para 'squadId' para alinhar com o banco
+    const squadId = formData.get("squad") as string | null; 
     const imageFile = formData.get("image") as File | null;
 
     // Validações
@@ -46,6 +47,7 @@ export async function PUT(request: Request) {
         console.log("Imagem salva no MinIO:", imageUrl);
       } catch (error) {
         console.error("Erro ao fazer upload da imagem:", error);
+        // Se der erro aqui, verifique as variáveis do MinIO na Vercel
         return NextResponse.json(
           { message: "Erro ao fazer upload da imagem" },
           { status: 500 }
@@ -58,7 +60,8 @@ export async function PUT(request: Request) {
       where: { id: usuario.id },
       data: {
         name: name.trim(),
-        squad: squad || null,
+        // AJUSTE: O nome da coluna no banco é squadId
+        squadId: squadId || null, 
         image: imageUrl,
       },
       select: {
@@ -66,7 +69,7 @@ export async function PUT(request: Request) {
         name: true,
         email: true,
         image: true,
-        squad: true,
+        squadId: true, // Ajustado para squadId
         level: true,
       },
     });
