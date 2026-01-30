@@ -7,10 +7,8 @@ export async function GET() {
       select: {
         id: true,
         name: true,
-        nome: true,
         email: true,
-        cargo: true,
-        avatar: true,
+        role: true,
         image: true,
         squad: {
           select: {
@@ -20,16 +18,16 @@ export async function GET() {
         },
       },
       orderBy: {
-        nome: "asc",
+        name: "asc",
       },
     })
 
     const transformedUsers = users.map((user) => ({
       id: user.id,
-      name: user.nome || user.name || "",
+      name: user.name || "",
       email: user.email,
-      position: user.cargo || "",
-      avatar: user.avatar || user.image || "",
+      position: user.role || "",
+      avatar: user.image || "",
       team: user.squad?.name || "",
       squadId: user.squad?.id || null,
     }))

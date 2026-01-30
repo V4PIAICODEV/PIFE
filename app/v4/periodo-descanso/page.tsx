@@ -47,12 +47,17 @@ interface RestPeriod {
   status: "solicitado" | "pendente" | "aprovado" | "em-descanso" | "vencido"
 }
 
-const statusConfig = {
+const statusConfig: Record<string, { label: string; color: string }> = {
   solicitado: { label: "Solicitado", color: "bg-blue-100 text-blue-800" },
   pendente: { label: "Pendente", color: "bg-yellow-100 text-yellow-800" },
   aprovado: { label: "Aprovado", color: "bg-green-100 text-green-800" },
   "em-descanso": { label: "Em descanso", color: "bg-purple-100 text-purple-800" },
   vencido: { label: "Vencido", color: "bg-red-100 text-red-800" },
+  rejeitado: { label: "Rejeitado", color: "bg-gray-100 text-gray-800" },
+}
+
+const getStatusConfig = (status: string) => {
+  return statusConfig[status] || { label: status, color: "bg-gray-100 text-gray-800" }
 }
 
 export default function PeriodoDescansoPage() {
@@ -96,18 +101,24 @@ export default function PeriodoDescansoPage() {
   // Group periods by month/year
   const groupedPeriods = filteredPeriods.reduce(
     (acc, period) => {
-      const [day, month, year] = period.startDate.split("/")
-      const monthYear = `${month}/${year}`
-      const monthName = new Date(Number.parseInt(year), Number.parseInt(month) - 1).toLocaleDateString("pt-BR", {
-        month: "long",
-        year: "numeric",
-      })
-      const key = `${monthName.charAt(0).toUpperCase() + monthName.slice(1)}`
+      try {
+        const dateParts = period.startDate?.split("/")
+        if (!dateParts || dateParts.length !== 3) return acc
+        
+        const [day, month, year] = dateParts
+        const monthName = new Date(Number.parseInt(year), Number.parseInt(month) - 1).toLocaleDateString("pt-BR", {
+          month: "long",
+          year: "numeric",
+        })
+        const key = `${monthName.charAt(0).toUpperCase() + monthName.slice(1)}`
 
-      if (!acc[key]) {
-        acc[key] = []
+        if (!acc[key]) {
+          acc[key] = []
+        }
+        acc[key].push(period)
+      } catch (e) {
+        console.error("Error grouping period:", e)
       }
-      acc[key].push(period)
       return acc
     },
     {} as Record<string, RestPeriod[]>,
@@ -467,7 +478,7 @@ export default function PeriodoDescansoPage() {
                       <td className="p-4">{period.daysUntilStart}</td>
                       <td className="p-4">{period.contractType}</td>
                       <td className="p-4">
-                        <Badge className={statusConfig[period.status].color}>{statusConfig[period.status].label}</Badge>
+                        <Badge className={getStatusConfig(period.status).color}>{getStatusConfig(period.status).label}</Badge>
                       </td>
                       <td className="p-4">
                         <div className="flex items-center gap-2">
