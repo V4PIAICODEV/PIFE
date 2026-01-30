@@ -50,6 +50,7 @@ model Usuario {
   CommentAcelerarOi CommentAcelerarOi[]
   squadId String?
   squad Squad? @relation(fields: [squadId], references: [id])
+  restPeriods RestPeriod[]
 }
 
 model CheckinPife {
@@ -131,4 +132,30 @@ model Squad {
   users     Usuario[] // Uma squad tem vários usuários
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+}
+
+enum RestPeriodStatus {
+  SOLICITADO
+  PENDENTE
+  APROVADO
+  EM_DESCANSO
+  VENCIDO
+  REJEITADO
+}
+
+model RestPeriod {
+  id                String           @id @default(uuid())
+  userId            String
+  user              Usuario          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  startDate         DateTime
+  endDate           DateTime
+  restDays          Int              // Dias de descanso
+  soldDays          Int              @default(0) // Dias vendidos
+  acquisitivePeriodStart DateTime    // Início do período aquisitivo
+  acquisitivePeriodEnd   DateTime    // Fim do período aquisitivo
+  remainingDays     Int              @default(30) // Saldo de dias
+  contractType      String?          // Tipo de contrato
+  status            RestPeriodStatus @default(SOLICITADO)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
 }
