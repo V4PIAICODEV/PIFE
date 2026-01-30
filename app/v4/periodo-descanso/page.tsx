@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation" // Added useRouter import
+import { useRouter } from "next/navigation"
+import useSWR from "swr"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -11,9 +12,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
-import { format } from "date-fns"
+import { format, differenceInDays } from "date-fns"
 import { ptBR } from "date-fns/locale"
-import { Search, Filter, CalendarIcon, Check, X, Info } from "lucide-react"
+import { Search, Filter, CalendarIcon, Check, X, Info, Loader2 } from "lucide-react"
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json())
+
+interface Colaborador {
+  id: string
+  name: string
+  email: string
+  position: string
+  avatar: string
+  team: string
+  squadId: string | null
+}
 
 interface RestPeriod {
   id: string
@@ -34,99 +47,6 @@ interface RestPeriod {
   status: "solicitado" | "pendente" | "aprovado" | "em-descanso" | "vencido"
 }
 
-const mockRestPeriods: RestPeriod[] = [
-  {
-    id: "1",
-    employee: {
-      name: "Felipe Cunha Fernandes",
-      avatar: "/felipe.jpg",
-      team: "TECH",
-      position: "Líder Tech",
-    },
-    startDate: "17/10/2025",
-    endDate: "31/10/2025",
-    restDays: 15,
-    soldDays: 0,
-    acquisitivePeriod: "05/2024 - 05/2025",
-    remainingDays: 30,
-    daysUntilStart: 20,
-    contractType: "",
-    status: "solicitado",
-  },
-  {
-    id: "2",
-    employee: {
-      name: "Felipe Bicudo",
-      avatar: "/felipe-b.jpg",
-      team: "S.O.X.",
-      position: "",
-    },
-    startDate: "06/10/2025",
-    endDate: "27/10/2025",
-    restDays: 22,
-    soldDays: 0,
-    acquisitivePeriod: "02/2024 - 02/2025",
-    remainingDays: 30,
-    daysUntilStart: 9,
-    contractType: "",
-    status: "pendente",
-  },
-  {
-    id: "3",
-    employee: {
-      name: "Antônio Derick",
-      avatar: "/antonio.jpg",
-      team: "Gerente 1",
-      position: "",
-    },
-    startDate: "06/10/2025",
-    endDate: "20/10/2025",
-    restDays: 15,
-    soldDays: 0,
-    acquisitivePeriod: "04/2024 - 04/2025",
-    remainingDays: 15,
-    daysUntilStart: 9,
-    contractType: "",
-    status: "aprovado",
-  },
-  {
-    id: "4",
-    employee: {
-      name: "Jussara Santos",
-      avatar: "/jussara.jpg",
-      team: "Cyber Crew",
-      position: "Designer",
-    },
-    startDate: "06/10/2025",
-    endDate: "17/10/2025",
-    restDays: 12,
-    soldDays: 0,
-    acquisitivePeriod: "02/2024 - 02/2025",
-    remainingDays: 30,
-    daysUntilStart: 9,
-    contractType: "",
-    status: "solicitado",
-  },
-  {
-    id: "5",
-    employee: {
-      name: "Daniel Carnales",
-      avatar: "/portrait-daniel.png",
-      team: "Cyber Crew",
-      position: "Coordenador",
-    },
-    startDate: "08/12/2025",
-    endDate: "19/12/2025",
-    restDays: 12,
-    soldDays: 0,
-    acquisitivePeriod: "04/2024 - 04/2025",
-    remainingDays: 30,
-    daysUntilStart: 72,
-    contractType: "",
-    status: "solicitado",
-  },
-]
-
 const statusConfig = {
   solicitado: { label: "Solicitado", color: "bg-blue-100 text-blue-800" },
   pendente: { label: "Pendente", color: "bg-yellow-100 text-yellow-800" },
@@ -136,8 +56,14 @@ const statusConfig = {
 }
 
 export default function PeriodoDescansoPage() {
-  const router = useRouter() // Added router instance
-  const [restPeriods, setRestPeriods] = useState<RestPeriod[]>(mockRestPeriods)
+  const router = useRouter()
+  
+  // Fetch rest periods from API
+  const { data: restPeriods = [], mutate, isLoading } = useSWR<RestPeriod[]>("/api/v4/rest-periods", fetcher)
+  
+  // Fetch colaboradores for select
+  const { data: colaboradores = [] } = useSWR<Colaborador[]>("/api/v4/colaboradores", fetcher)
+  
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedTeam, setSelectedTeam] = useState("todos")
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
@@ -145,6 +71,10 @@ export default function PeriodoDescansoPage() {
   const [endDate, setEndDate] = useState<Date>()
   const [selectedEmployee, setSelectedEmployee] = useState("")
   const [selectedYear, setSelectedYear] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Get unique teams for filter
+  const teams = Array.from(new Set(colaboradores.map((c) => c.team).filter(Boolean)))
 
   // Calculate status counts
   const statusCounts = {
@@ -183,17 +113,72 @@ export default function PeriodoDescansoPage() {
     {} as Record<string, RestPeriod[]>,
   )
 
-  const handleAddRestPeriod = () => {
-    // Implementation for adding rest period
-    setIsAddModalOpen(false)
+  const handleAddRestPeriod = async () => {
+    if (!selectedEmployee || !startDate || !endDate || !selectedYear) return
+
+    setIsSubmitting(true)
+    try {
+      const restDays = differenceInDays(endDate, startDate) + 1
+      const yearNum = parseInt(selectedYear)
+
+      const response = await fetch("/api/v4/rest-periods", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: selectedEmployee,
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
+          restDays,
+          soldDays: 0,
+          acquisitivePeriodStart: new Date(yearNum - 1, 0, 1).toISOString(),
+          acquisitivePeriodEnd: new Date(yearNum - 1, 11, 31).toISOString(),
+          remainingDays: 30 - restDays,
+        }),
+      })
+
+      if (response.ok) {
+        mutate() // Refresh the data
+        setIsAddModalOpen(false)
+        setSelectedEmployee("")
+        setStartDate(undefined)
+        setEndDate(undefined)
+        setSelectedYear("")
+      }
+    } catch (error) {
+      console.error("Error adding rest period:", error)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
-  const handleApprove = (id: string) => {
-    setRestPeriods((prev) => prev.map((p) => (p.id === id ? { ...p, status: "aprovado" as const } : p)))
+  const handleApprove = async (id: string) => {
+    try {
+      const response = await fetch(`/api/v4/rest-periods/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "aprovado" }),
+      })
+
+      if (response.ok) {
+        mutate() // Refresh the data
+      }
+    } catch (error) {
+      console.error("Error approving rest period:", error)
+    }
   }
 
-  const handleReject = (id: string) => {
-    setRestPeriods((prev) => prev.filter((p) => p.id !== id))
+  const handleReject = async (id: string) => {
+    try {
+      const response = await fetch(`/api/v4/rest-periods/${id}`, {
+        method: "DELETE",
+      })
+
+      if (response.ok) {
+        mutate() // Refresh the data
+      }
+    } catch (error) {
+      console.error("Error rejecting rest period:", error)
+    }
   }
 
   return (
@@ -239,9 +224,11 @@ export default function PeriodoDescansoPage() {
                         <SelectValue placeholder="Selecione um colaborador" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="felipe">Felipe Cunha Fernandes</SelectItem>
-                        <SelectItem value="antonio">Antônio Derick</SelectItem>
-                        <SelectItem value="jussara">Jussara Santos</SelectItem>
+                        {colaboradores.map((colaborador) => (
+                          <SelectItem key={colaborador.id} value={colaborador.id}>
+                            {colaborador.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -306,9 +293,16 @@ export default function PeriodoDescansoPage() {
                 <Button
                   onClick={handleAddRestPeriod}
                   className="w-full"
-                  disabled={!selectedEmployee || !startDate || !endDate || !selectedYear}
+                  disabled={!selectedEmployee || !startDate || !endDate || !selectedYear || isSubmitting}
                 >
-                  Adicionar
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Adicionando...
+                    </>
+                  ) : (
+                    "Adicionar"
+                  )}
                 </Button>
               </div>
             </DialogContent>
@@ -373,10 +367,12 @@ export default function PeriodoDescansoPage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="todos">🔗 Todos os times</SelectItem>
-              <SelectItem value="TECH">TECH</SelectItem>
-              <SelectItem value="S.O.X.">S.O.X.</SelectItem>
-              <SelectItem value="Cyber Crew">Cyber Crew</SelectItem>
+              <SelectItem value="todos">Todos os times</SelectItem>
+              {teams.map((team) => (
+                <SelectItem key={team} value={team}>
+                  {team}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
 
@@ -417,7 +413,23 @@ export default function PeriodoDescansoPage() {
               </tr>
             </thead>
             <tbody>
-              {Object.entries(groupedPeriods).map(([monthYear, periods]) => (
+              {isLoading ? (
+                <tr>
+                  <td colSpan={12} className="p-8 text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      <span>Carregando períodos de descanso...</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : Object.entries(groupedPeriods).length === 0 ? (
+                <tr>
+                  <td colSpan={12} className="p-8 text-center text-muted-foreground">
+                    Nenhum período de descanso encontrado. Clique em "Adicionar Período de Descanso" para começar.
+                  </td>
+                </tr>
+              ) : (
+                Object.entries(groupedPeriods).map(([monthYear, periods]) => (
                 <>
                   <tr key={`header-${monthYear}`} className="bg-muted/30">
                     <td colSpan={12} className="p-4 font-semibold">
@@ -480,7 +492,8 @@ export default function PeriodoDescansoPage() {
                     </tr>
                   ))}
                 </>
-              ))}
+                ))
+              )}
             </tbody>
           </table>
         </div>
