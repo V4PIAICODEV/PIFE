@@ -8,23 +8,24 @@ import { BeltBadge } from "@/components/belt-badge"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { currentUser } from "@/lib/mock-data"
 import { cn } from "@/lib/utils"
-import { Home, BookOpen, Calendar, Trophy, Flame, Users, Menu, X, Settings } from "lucide-react"
+// Ícones ajustados para o foco no PIFE
+import { Home, Trophy, Flame, Users, Menu, X, Settings } from "lucide-react"
 
 const navigationItems = [
   { href: "/", label: "Dashboard", icon: Home },
-  { href: "/trilha", label: "Trilha", icon: BookOpen },
-  { href: "/calendario", label: "Calendário", icon: Calendar },
   { href: "/mural-faixas", label: "Mural das Faixas", icon: Users },
   { href: "/checkin", label: "Check-in PIFE", icon: Flame },
   { href: "/ranking", label: "Ranking PIFE", icon: Trophy },
 ]
 
+// Mantivemos o Admin apenas para quem tem permissão
 const adminNavigationItems = [{ href: "/admin", label: "Admin", icon: Settings }]
 
 export function Navigation() {
   const pathname = usePathname()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
+  // A lógica de cargo continua vindo do seu mock ou banco
   const showAdminNav = currentUser.role === "admin" || currentUser.role === "mentor"
   const allNavigationItems = showAdminNav ? [...navigationItems, ...adminNavigationItems] : navigationItems
 
@@ -32,17 +33,17 @@ export function Navigation() {
     <nav className="border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 sticky top-0 z-50">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          {/* Logo and Brand */}
+          {/* Logo e Marca */}
           <div className="flex items-center gap-4">
             <Link href="/" className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm">PDI</span>
+                <span className="text-primary-foreground font-bold text-sm">V4</span>
               </div>
-              <span className="font-bold text-lg hidden sm:block">Sistema PDI</span>
+              <span className="font-bold text-lg hidden sm:block">Sistema PIFE</span>
             </Link>
           </div>
 
-          {/* Desktop Navigation */}
+          {/* Desktop Navigation - Apenas PIFE e Dash */}
           <div className="hidden md:flex items-center gap-1">
             {allNavigationItems.map((item) => {
               const Icon = item.icon
@@ -63,7 +64,7 @@ export function Navigation() {
             })}
           </div>
 
-          {/* User Info */}
+          {/* Informações do Usuário (Dinamismo mantido) */}
           <div className="flex items-center gap-3">
             <ThemeToggle />
 
@@ -73,7 +74,7 @@ export function Navigation() {
             </div>
             <BeltBadge belt={currentUser.belt} degree={currentUser.degree} size="sm" />
 
-            {/* Mobile Menu Button */}
+            {/* Menu Mobile */}
             <Button
               variant="ghost"
               size="sm"
