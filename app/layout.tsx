@@ -8,10 +8,8 @@ import { Toaster } from "sonner";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  // Título atualizado para refletir o novo nome da plataforma
   title: "PIFE - Gamificação V4",
   description: "Sistema de check-in e reconhecimento profissional focado em Profissional, Intelectual, Físico e Emocional",
-
   icons: {
     icon: "/images/logo-v4.png",
   },
@@ -32,23 +30,3 @@ export default function RootLayout({
     </html>
   );
 }
-// Trecho a ser atualizado no app/v4/layout.tsx para restaurar o menu
-const navigationSections = [
-  {
-    type: "item",
-    label: "Dashboard",
-    href: "/v4",
-    icon: "Home",
-  },
-  {
-    type: "section",
-    title: "SISTEMA PIFE",
-    items: [
-      { label: "Check-in Diário", href: "/v4/checkin", icon: "Flame" },
-      { label: "Ranking Geral", href: "/v4/ranking", icon: "Trophy" },
-      { label: "Meu Histórico", href: "/v4/historico-pife", icon: "Clock" },
-      { label: "Feed de Equipe", href: "/v4/feed-pife", icon: "MessageSquare" },
-      { label: "Mural de Faixas", href: "/v4/mural-faixas", icon: "Users" },
-    ],
-  },
-];
