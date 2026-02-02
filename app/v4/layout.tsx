@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import authOptions from "@/lib/auth";
-import { LayoutClient } from "./layoutClient";
+// AJUSTE AQUI: O nome do arquivo no GitHub é layout-client.tsx
+import { LayoutClient } from "./layout-client"; 
 import { redirect } from "next/navigation";
 
 export default async function LayoutV4({ children }: { children: React.ReactNode }) {
@@ -10,7 +11,7 @@ export default async function LayoutV4({ children }: { children: React.ReactNode
     redirect("/login");
   }
 
-  // Definição das secções focadas no PIFE
+  // Restaurando o menu completo do PIFE
   const navigationSections = [
     {
       type: "item",
@@ -25,7 +26,7 @@ export default async function LayoutV4({ children }: { children: React.ReactNode
         { label: "Check-in Diário", href: "/v4/checkin", icon: "Flame" },
         { label: "Ranking Geral", href: "/v4/ranking", icon: "Trophy" },
         { label: "Meu Histórico", href: "/v4/historico-pife", icon: "Clock" },
-        { label: "Feed de Equipa", href: "/v4/feed-pife", icon: "MessageSquare" },
+        { label: "Feed de Equipe", href: "/v4/feed-pife", icon: "MessageSquare" },
         { label: "Mural de Faixas", href: "/v4/mural-faixas", icon: "Users" },
       ],
     },
