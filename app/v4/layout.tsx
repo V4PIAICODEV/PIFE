@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import authOptions from "@/lib/auth";
 import { LayoutClient } from "./layout-client";
 import { redirect } from "next/navigation";
+import { LayoutClient } from "./layout-client";
 
 export default async function LayoutV4({ children }: { children: React.ReactNode }) {
   const session = await getServerSession(authOptions);
