@@ -1,7 +1,6 @@
 import { getServerSession } from "next-auth";
 import authOptions from "@/lib/auth";
-// AJUSTE AQUI: O nome do arquivo no GitHub é layout-client.tsx
-import { LayoutClient } from "./layout-client"; 
+import { LayoutClient } from "./layout-client"; // Use o hífen aqui!
 import { redirect } from "next/navigation";
 
 export default async function LayoutV4({ children }: { children: React.ReactNode }) {
