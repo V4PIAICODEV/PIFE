@@ -10,7 +10,7 @@ export default async function LayoutV4({ children }: { children: React.ReactNode
     redirect("/login");
   }
 
-  // LIMPEZA AQUI: Definimos apenas as seções do PIFE e Dashboard
+  // O menu lateral deve ficar neste arquivo específico da pasta v4
   const navigationSections = [
     {
       type: "item",
@@ -19,28 +19,15 @@ export default async function LayoutV4({ children }: { children: React.ReactNode
       icon: "Home",
     },
     {
-      type: "item",
-      label: "Check-in PIFE",
-      href: "/v4/checkin",
-      icon: "Flame",
-    },
-    {
-      type: "item",
-      label: "Ranking PIFE",
-      href: "/v4/ranking",
-      icon: "Trophy",
-    },
-    {
-      type: "item",
-      label: "Mural das Faixas",
-      href: "/v4/mural-faixas",
-      icon: "Users",
-    },
-    {
-      type: "item",
-      label: "Configurações",
-      href: "/v4/configuracoes",
-      icon: "Settings",
+      type: "section",
+      title: "SISTEMA PIFE",
+      items: [
+        { label: "Check-in Diário", href: "/v4/checkin", icon: "Flame" },
+        { label: "Ranking Geral", href: "/v4/ranking", icon: "Trophy" },
+        { label: "Meu Histórico", href: "/v4/historico-pife", icon: "Clock" },
+        { label: "Feed de Equipe", href: "/v4/feed-pife", icon: "MessageSquare" },
+        { label: "Mural de Faixas", href: "/v4/mural-faixas", icon: "Users" },
+      ],
     },
   ];
 
