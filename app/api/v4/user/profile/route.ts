@@ -19,13 +19,16 @@ export async function PUT(request: Request) {
       return NextResponse.json({ message: "Usuário não encontrado" }, { status: 404 });
     }
 
-    const formData = await request.formData();
-    const name = formData.get("name") as string;
-    const squadId = formData.get("squad") as string | null;
-    const imageUrl = formData.get("imageUrl") as string | null; // Receberemos a URL já pronta do frontend
+    // ALTERAÇÃO: Agora recebemos JSON do frontend, não mais FormData
+    const body = await request.json();
+    const { name, squadId, image } = body;
 
-    // Validação de Squad: O erro 400 ocorre se o ID não for um UUID válido do Supabase
-    // Se o ID for "1", "2" (do mock), o Prisma vai rejeitar.
+    // Validação básica do nome
+    if (!name || name.trim().length < 2) {
+      return NextResponse.json({ message: "Nome inválido" }, { status: 400 });
+    }
+
+    // Validação de Squad: Garante que o ID seja um UUID válido ou null
     const validSquadId = (squadId && squadId.length > 5) ? squadId : null;
 
     const updatedUser = await prisma.usuario.update({
@@ -33,7 +36,8 @@ export async function PUT(request: Request) {
       data: {
         name: name.trim(),
         squadId: validSquadId,
-        image: imageUrl || usuario.image,
+        // Se 'image' vier no body, usamos ela (URL do Supabase), senão mantemos a atual
+        image: image !== undefined ? image : usuario.image,
       },
       select: {
         id: true,
@@ -51,12 +55,15 @@ export async function PUT(request: Request) {
     });
   } catch (error: any) {
     console.error("Erro ao atualizar perfil:", error);
+    
+    // Erro P2003 = Chave estrangeira (Squad ID não existe no banco)
     if (error.code === 'P2003') {
       return NextResponse.json(
-        { message: "ID de Squad inválido para o banco Supabase." },
+        { message: "O Squad selecionado não é válido." },
         { status: 400 }
       );
     }
-    return NextResponse.json({ message: "Erro interno" }, { status: 500 });
+
+    return NextResponse.json({ message: "Erro interno ao salvar perfil" }, { status: 500 });
   }
 }
