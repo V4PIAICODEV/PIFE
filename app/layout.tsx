@@ -8,9 +8,9 @@ import { Toaster } from "sonner";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  // MUDANÇA AQUI: De LIFE para GROW
-  title: "GROW - Trilha de Desenvolvimento",
-  description: "Plataforma gamificada para desenvolvimento profissional",
+  // Título atualizado para refletir o novo nome da plataforma
+  title: "PIFE - Gamificação V4",
+  description: "Sistema de check-in e reconhecimento profissional focado em Profissional, Intelectual, Físico e Emocional",
 
   icons: {
     icon: "/images/logo-v4.png",
@@ -23,10 +23,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" suppressHydrationWarning>
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
         <Providers>{children}</Providers>
-        <Toaster />
+        <Toaster position="top-right" />
         <Analytics />
       </body>
     </html>
