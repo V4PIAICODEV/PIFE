@@ -1,6 +1,6 @@
 import { getServerSession } from "next-auth";
 import authOptions from "@/lib/auth";
-import { LayoutClient } from "./layoutclient";
+import { LayoutClient } from "./layoutClient";
 import { redirect } from "next/navigation";
 
 export default async function LayoutV4({ children }: { children: React.ReactNode }) {
