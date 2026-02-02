@@ -8,7 +8,7 @@ import { Toaster } from "sonner";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "PIFE - Gamificação V4",
+  title: "PIFE - V4",
   description: "Sistema de check-in e reconhecimento profissional focado em Profissional, Intelectual, Físico e Emocional",
   icons: {
     icon: "/images/logo-v4.png",
