@@ -20,7 +20,7 @@ export default async function LayoutV4({ children }: { children: React.ReactNode
     },
     {
       type: "section",
-      title: "SISTEMA PIFE",
+      title: "PIFE",
       items: [
         { label: "Check-in Diário", href: "/v4/checkin", icon: "Flame" },
         { label: "Ranking Geral", href: "/v4/ranking", icon: "Trophy" },
