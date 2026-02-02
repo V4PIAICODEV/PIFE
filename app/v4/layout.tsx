@@ -26,7 +26,6 @@ export default async function LayoutV4({ children }: { children: React.ReactNode
         { label: "Ranking Geral", href: "/v4/ranking", icon: "Trophy" },
         { label: "Meu Histórico", href: "/v4/historico-pife", icon: "Clock" },
         { label: "Feed de Equipe", href: "/v4/feed-pife", icon: "MessageSquare" },
-        { label: "Mural de Faixas", href: "/v4/mural-faixas", icon: "Users" },
       ],
     },
   ];
