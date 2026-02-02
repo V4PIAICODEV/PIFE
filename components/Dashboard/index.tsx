@@ -151,7 +151,7 @@ export default function HomePage({
             </AvatarFallback>
           </Avatar>
           <div>
-            <h1 className="text-xl md:text-3xl font-bold">Investidor, {user.name}</h1>
+            <h1 className="text-xl md:text-3xl font-bold">Bem vindo, {user.name}</h1>
             <p className="text-sm font-semibold" style={{ color: userSquad?.color || '#888' }}>
               {userSquad ? userSquad.name : "Sem Squad"}
             </p>
