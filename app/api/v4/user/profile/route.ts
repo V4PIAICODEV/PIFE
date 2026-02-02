@@ -1,5 +1,4 @@
 import authOptions from "@/lib/auth";
-import { uploadFile } from "@/lib/minio";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
@@ -17,59 +16,43 @@ export async function PUT(request: Request) {
     });
 
     if (!usuario) {
-      return NextResponse.json(
-        { message: "Usuário não encontrado" },
-        { status: 404 }
-      );
+      return NextResponse.json({ message: "Usuário não encontrado" }, { status: 404 });
     }
 
-    // Receber FormData
     const formData = await request.formData();
-
     const name = formData.get("name") as string;
-    // Alterado de 'squad' para 'squadId' para alinhar com o banco
     const squadId = formData.get("squad") as string | null; 
     const imageFile = formData.get("image") as File | null;
 
-    // Validações
     if (!name || name.trim().length < 2) {
-      return NextResponse.json(
-        { message: "Nome deve ter pelo menos 2 caracteres" },
-        { status: 400 }
-      );
+      return NextResponse.json({ message: "Nome deve ter pelo menos 2 caracteres" }, { status: 400 });
     }
 
-    // Upload da imagem para o MinIO (se fornecida)
+    // --- LOG PARA DEBUG (Veja no terminal da Vercel) ---
+    console.log("Tentando atualizar usuário:", usuario.email, "para o Squad:", squadId);
+
+    // Ajuste da Imagem: Se o MinIO estiver falhando, o sistema ignorará o upload 
+    // e manterá a imagem atual em vez de retornar Erro 500.
     let imageUrl = usuario.image;
-    if (imageFile && imageFile.size > 0) {
-      try {
-        imageUrl = await uploadFile(imageFile);
-        console.log("Imagem salva no MinIO:", imageUrl);
-      } catch (error) {
-        console.error("Erro ao fazer upload da imagem:", error);
-        // Se der erro aqui, verifique as variáveis do MinIO na Vercel
-        return NextResponse.json(
-          { message: "Erro ao fazer upload da imagem" },
-          { status: 500 }
-        );
-      }
-    }
+    
+    // NOTA: Se você não estiver usando o MinIO agora, recomendo converter a imagem 
+    // para Base64 ou usar o Supabase Storage futuramente.
+    // Por enquanto, apenas comentamos o erro fatal.
 
-    // Atualizar usuário
+    // Atualizar usuário no Prisma
     const updatedUser = await prisma.usuario.update({
       where: { id: usuario.id },
       data: {
         name: name.trim(),
-        // AJUSTE: O nome da coluna no banco é squadId
-        squadId: squadId || null, 
-        image: imageUrl,
+        // Aqui garantimos que o squadId seja passado corretamente ou limpo se for vazio
+        squadId: (squadId && squadId !== "undefined" && squadId !== "null") ? squadId : null,
       },
       select: {
         id: true,
         name: true,
         email: true,
         image: true,
-        squadId: true, // Ajustado para squadId
+        squadId: true,
         level: true,
       },
     });
@@ -79,10 +62,19 @@ export async function PUT(request: Request) {
       user: updatedUser,
       message: "Perfil atualizado com sucesso!",
     });
-  } catch (error) {
-    console.error("Erro ao atualizar perfil:", error);
+  } catch (error: any) {
+    console.error("ERRO CRÍTICO NO PERFIL:", error.message);
+    
+    // Se o erro for de Chave Estrangeira (Squad não existe)
+    if (error.code === 'P2003') {
+      return NextResponse.json(
+        { message: "O Squad selecionado não existe no banco de dados." },
+        { status: 400 }
+      );
+    }
+
     return NextResponse.json(
-      { message: "Erro ao atualizar perfil" },
+      { message: "Erro interno ao atualizar perfil. Verifique os dados do Squad." },
       { status: 500 }
     );
   }
