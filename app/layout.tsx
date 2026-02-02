@@ -32,3 +32,23 @@ export default function RootLayout({
     </html>
   );
 }
+// Trecho a ser atualizado no app/v4/layout.tsx para restaurar o menu
+const navigationSections = [
+  {
+    type: "item",
+    label: "Dashboard",
+    href: "/v4",
+    icon: "Home",
+  },
+  {
+    type: "section",
+    title: "SISTEMA PIFE",
+    items: [
+      { label: "Check-in Diário", href: "/v4/checkin", icon: "Flame" },
+      { label: "Ranking Geral", href: "/v4/ranking", icon: "Trophy" },
+      { label: "Meu Histórico", href: "/v4/historico-pife", icon: "Clock" },
+      { label: "Feed de Equipe", href: "/v4/feed-pife", icon: "MessageSquare" },
+      { label: "Mural de Faixas", href: "/v4/mural-faixas", icon: "Users" },
+    ],
+  },
+];
