@@ -21,31 +21,19 @@ export async function PUT(request: Request) {
 
     const formData = await request.formData();
     const name = formData.get("name") as string;
-    const squadId = formData.get("squad") as string | null; 
-    const imageFile = formData.get("image") as File | null;
+    const squadId = formData.get("squad") as string | null;
+    const imageUrl = formData.get("imageUrl") as string | null; // Receberemos a URL já pronta do frontend
 
-    if (!name || name.trim().length < 2) {
-      return NextResponse.json({ message: "Nome deve ter pelo menos 2 caracteres" }, { status: 400 });
-    }
+    // Validação de Squad: O erro 400 ocorre se o ID não for um UUID válido do Supabase
+    // Se o ID for "1", "2" (do mock), o Prisma vai rejeitar.
+    const validSquadId = (squadId && squadId.length > 5) ? squadId : null;
 
-    // --- LOG PARA DEBUG (Veja no terminal da Vercel) ---
-    console.log("Tentando atualizar usuário:", usuario.email, "para o Squad:", squadId);
-
-    // Ajuste da Imagem: Se o MinIO estiver falhando, o sistema ignorará o upload 
-    // e manterá a imagem atual em vez de retornar Erro 500.
-    let imageUrl = usuario.image;
-    
-    // NOTA: Se você não estiver usando o MinIO agora, recomendo converter a imagem 
-    // para Base64 ou usar o Supabase Storage futuramente.
-    // Por enquanto, apenas comentamos o erro fatal.
-
-    // Atualizar usuário no Prisma
     const updatedUser = await prisma.usuario.update({
       where: { id: usuario.id },
       data: {
         name: name.trim(),
-        // Aqui garantimos que o squadId seja passado corretamente ou limpo se for vazio
-        squadId: (squadId && squadId !== "undefined" && squadId !== "null") ? squadId : null,
+        squadId: validSquadId,
+        image: imageUrl || usuario.image,
       },
       select: {
         id: true,
@@ -53,7 +41,6 @@ export async function PUT(request: Request) {
         email: true,
         image: true,
         squadId: true,
-        level: true,
       },
     });
 
@@ -63,19 +50,13 @@ export async function PUT(request: Request) {
       message: "Perfil atualizado com sucesso!",
     });
   } catch (error: any) {
-    console.error("ERRO CRÍTICO NO PERFIL:", error.message);
-    
-    // Se o erro for de Chave Estrangeira (Squad não existe)
+    console.error("Erro ao atualizar perfil:", error);
     if (error.code === 'P2003') {
       return NextResponse.json(
-        { message: "O Squad selecionado não existe no banco de dados." },
+        { message: "ID de Squad inválido para o banco Supabase." },
         { status: 400 }
       );
     }
-
-    return NextResponse.json(
-      { message: "Erro interno ao atualizar perfil. Verifique os dados do Squad." },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: "Erro interno" }, { status: 500 });
   }
 }
