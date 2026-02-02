@@ -4,24 +4,13 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   BarChart3,
-  BookOpen,
-  Calendar,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
-  ChevronUp,
-  Clock,
-  Coffee,
   Flame,
   Home,
   LogOut,
-  MessageSquare,
-  Network,
-  Play,
   Settings,
   Trophy,
-  User,
-  UserPlus,
   Users,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
@@ -29,22 +18,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 
-// Mapeamento de ícones
+// Mapeamento de ícones simplificado apenas para o PIFE
 const iconMap: Record<string, any> = {
   Home,
-  BookOpen,
-  Calendar,
   Users,
-  Play,
   Flame,
   Trophy,
-  Clock,
-  Network,
-  Coffee,
-  UserPlus,
-  MessageSquare,
   BarChart3,
-  User,
   Settings,
 };
 
@@ -58,15 +38,6 @@ export function Sidebar({
   navigationSections?: any[];
 }) {
   const pathname = usePathname();
-  const [expandedSections, setExpandedSections] = useState<string[]>([]);
-
-  const toggleSection = (sectionTitle: string) => {
-    setExpandedSections((prev) =>
-      prev.includes(sectionTitle)
-        ? prev.filter((title) => title !== sectionTitle)
-        : [...prev, sectionTitle]
-    );
-  };
 
   return (
     <div
@@ -75,7 +46,7 @@ export function Sidebar({
         open ? "w-16" : "w-64"
       )}
     >
-      {/* Collapse Toggle */}
+      {/* Botão de Recolher Sidebar */}
       <div className="flex justify-end p-2 border-b">
         <Button
           variant="ghost"
@@ -91,13 +62,11 @@ export function Sidebar({
         </Button>
       </div>
 
-      {/* Navigation Items */}
+      {/* Itens de Navegação PIFE */}
       <div className="p-2 space-y-2 overflow-y-auto h-[calc(100vh-10rem)]">
-        {navigationSections.map((section, index) => {
-          // Se for um item simples (ex: Dashboard)
+        {navigationSections.map((section) => {
           if (section.type === "item") {
             const Icon = iconMap[section.icon] || Home;
-            // Para o Dashboard, verificar apenas se é exatamente a rota
             const isActive = pathname === section.href;
 
             return (
@@ -106,9 +75,9 @@ export function Sidebar({
                   <Button
                     variant={isActive ? "default" : "ghost"}
                     className={cn(
-                      "w-full justify-center gap-3 h-10",
+                      "w-full justify-start gap-3 h-10",
                       isActive && "bg-primary text-primary-foreground",
-                      open && "px-2"
+                      open && "px-2 justify-center"
                     )}
                   >
                     <Icon className="h-4 w-4 flex-shrink-0" />
@@ -122,88 +91,19 @@ export function Sidebar({
               </div>
             );
           }
-
-          // Se for uma seção com itens
-          if (section.type === "section") {
-            const isExpanded = expandedSections.includes(section.title);
-            const hasActiveItem = section.items?.some(
-              (item: any) => pathname === item.href
-            );
-
-            return (
-              <div
-                key={section.title}
-                className={index > 0 ? "border-t pt-2" : ""}
-              >
-                {/* Section Header - Clickable to expand/collapse */}
-                <Button
-                  variant="ghost"
-                  onClick={() => !open && toggleSection(section.title)}
-                  className={cn(
-                    "w-full justify-between h-10 font-semibold text-sm",
-                    hasActiveItem && "bg-muted",
-                    open && "px-2"
-                  )}
-                >
-                  {!open && (
-                    <>
-                      <span>{section.title}</span>
-                      {isExpanded ? (
-                        <ChevronUp className="h-4 w-4" />
-                      ) : (
-                        <ChevronDown className="h-4 w-4" />
-                      )}
-                    </>
-                  )}
-                  {open && (
-                    <span className="text-sm font-bold w-full text-center">
-                      {section.title.charAt(0)}
-                    </span>
-                  )}
-                </Button>
-
-                {/* Section Items - Show when expanded or collapsed sidebar */}
-                {(isExpanded || open) && (
-                  <div className={cn("space-y-1", !open && "ml-2 mt-1")}>
-                    {section.items?.map((item: any) => {
-                      const Icon = iconMap[item.icon] || Home;
-                      const isActive = pathname === item.href;
-
-                      return (
-                        <Link key={item.href} href={item.href}>
-                          <Button
-                            variant={isActive ? "default" : "ghost"}
-                            className={cn(
-                              "w-full justify-start gap-3 h-9 text-sm",
-                              isActive && "bg-primary text-primary-foreground",
-                              open && "px-2"
-                            )}
-                          >
-                            <Icon className="h-4 w-4 flex-shrink-0" />
-                            {!open && (
-                              <span className="truncate">{item.label}</span>
-                            )}
-                          </Button>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            );
-          }
-
           return null;
         })}
       </div>
-      <div className="p-2">
+
+      {/* Botão de Logout */}
+      <div className="p-2 border-t">
         <Button
           variant="ghost"
-          className="w-full bg-red-600 hover:bg-red-700 mb-2 cursor-pointer"
+          className="w-full bg-red-600 hover:bg-red-700 mb-2 text-white"
           onClick={() => signOut()}
         >
           <LogOut className="h-4 w-4" />
-          <span className={cn("text-white", open && "hidden")}>Sair</span>
+          {!open && <span className="ml-2">Sair</span>}
         </Button>
       </div>
     </div>
