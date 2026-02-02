@@ -15,12 +15,13 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 
+// Interface ajustada para refletir que o squad pode ser um objeto do banco
 interface UserRanking {
   id: string;
   name: string;
   email: string;
   image: string | null;
-  squad: string | null;
+  squad: { id: string; name: string } | string | null; // Ajustado aqui
   totalPoints: number;
   monthlyCheckins: number;
   monthlyPoints: number;
@@ -54,41 +55,29 @@ function PIFERankingCard({
 
   const getRankIcon = () => {
     switch (rank) {
-      case 1:
-        return <Trophy className="h-5 w-5 text-yellow-500" />;
-      case 2:
-        return <Medal className="h-5 w-5 text-gray-400" />;
-      case 3:
-        return <Award className="h-5 w-5 text-amber-600" />;
-      default:
-        return;
+      case 1: return <Trophy className="h-5 w-5 text-yellow-500" />;
+      case 2: return <Medal className="h-5 w-5 text-gray-400" />;
+      case 3: return <Award className="h-5 w-5 text-amber-600" />;
+      default: return null;
     }
   };
 
   const getRankColor = () => {
     switch (rank) {
-      case 1:
-        return "bg-yellow-50 border-yellow-200 dark:bg-yellow-950/20 dark:border-yellow-800";
-      case 2:
-        return "bg-gray-50 border-gray-200 dark:bg-gray-950/20 dark:border-gray-800";
-      case 3:
-        return "bg-amber-50 border-amber-200 dark:bg-amber-950/20 dark:border-amber-800";
-      default:
-        return isCurrentUser ? "bg-primary/5 border-primary/20" : "bg-muted/20";
+      case 1: return "bg-yellow-50 border-yellow-200 dark:bg-yellow-950/20 dark:border-yellow-800";
+      case 2: return "bg-gray-50 border-gray-200 dark:bg-gray-950/20 dark:border-gray-800";
+      case 3: return "bg-amber-50 border-amber-200 dark:bg-amber-950/20 dark:border-amber-800";
+      default: return isCurrentUser ? "bg-primary/5 border-primary/20" : "bg-card";
     }
   };
 
-  // Usar pontos mensais se for a aba mensal, senão usar pontos totais
+  // CORREÇÃO DO ERRO #31: Extraindo o nome se for um objeto
+  const squadName = typeof user.squad === "object" ? user.squad?.name : user.squad;
+
   const pifePoints = period === "mensal" ? user.monthlyPoints : user.totalPoints;
-  const pifeStreak = user.streak;
-  const monthlyCheckins = user.monthlyCheckins;
 
   return (
-    <Card
-      className={`${getRankColor()} ${
-        isCurrentUser ? "ring-2 ring-primary/20" : ""
-      }`}
-    >
+    <Card className={`${getRankColor()} ${isCurrentUser ? "ring-2 ring-primary/20" : ""}`}>
       <CardContent className="pt-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -99,7 +88,7 @@ function PIFERankingCard({
             {user.image ? (
               <Image
                 src={user.image}
-                alt={`${user.name} profile`}
+                alt={user.name}
                 width={40}
                 height={40}
                 className="w-10 h-10 rounded-full object-cover border-2 border-border"
@@ -112,20 +101,17 @@ function PIFERankingCard({
             <div>
               <p className="font-semibold flex items-center gap-2">
                 {user.name}
-                {isCurrentUser && (
-                  <Badge variant="outline" className="text-xs">
-                    Você
-                  </Badge>
-                )}
+                {isCurrentUser && <Badge variant="outline" className="text-[10px] h-4">VOCÊ</Badge>}
               </p>
               <div className="flex items-center gap-2">
-                {user.squad && (
+                {/* Renderizando apenas o texto do nome do Squad */}
+                {squadName && (
                   <Badge variant="secondary" className="text-xs">
-                    {user.squad}
+                    {squadName}
                   </Badge>
                 )}
-                <Badge variant="outline" className="text-xs">
-                  {monthlyCheckins} este mês
+                <Badge variant="outline" className="text-[10px]">
+                  {user.monthlyCheckins} check-ins
                 </Badge>
               </div>
             </div>
@@ -133,10 +119,10 @@ function PIFERankingCard({
 
           <div className="text-right">
             <p className="text-2xl font-bold text-primary">{pifePoints}</p>
-            <p className="text-sm text-muted-foreground">pontos PIFE</p>
-            <div className="flex items-center gap-1 mt-1">
-              <Flame className="h-3 w-3 text-orange-500" />
-              <span className="text-xs text-orange-500">{pifeStreak} dias</span>
+            <p className="text-xs text-muted-foreground">pontos PIFE</p>
+            <div className="flex items-center justify-end gap-1 mt-1 text-orange-500">
+              <Flame className="h-3 w-3" />
+              <span className="text-xs font-bold">{user.streak} dias</span>
             </div>
           </div>
         </div>
@@ -145,104 +131,36 @@ function PIFERankingCard({
   );
 }
 
-export default function RankingPIFEPage({
-  users,
-  currentUserId,
-}: RankingPageProps) {
+export default function RankingPIFEPage({ users = [], currentUserId }: RankingPageProps) {
   const pifeRanking = users;
-
-  const getCurrentUserRank = () => {
-    return pifeRanking.findIndex((u) => u.id === currentUserId) + 1;
-  };
-
   const currentUserData = pifeRanking.find((u) => u.id === currentUserId);
+  const currentUserRank = pifeRanking.findIndex((u) => u.id === currentUserId) + 1;
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8 max-w-4xl">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Ranking PIFE</h1>
-        <p className="text-muted-foreground">
-          Ranking baseado na consistência e qualidade dos check-ins PIFE
-        </p>
+        <h1 className="text-3xl font-black mb-2 uppercase">Ranking PIFE</h1>
+        <p className="text-muted-foreground">Consistência e evolução profissional, física e mental.</p>
       </div>
 
-      {/* Current User PIFE Stats */}
       <Card className="mb-8 bg-primary/5 border-primary/20">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Target className="h-5 w-5" />
-            Suas Métricas PIFE
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
             <div>
-              <p className="text-2xl font-bold text-primary">
-                #{getCurrentUserRank()}
-              </p>
-              <p className="text-sm text-muted-foreground">Posição PIFE</p>
+              <p className="text-2xl font-black text-primary">#{currentUserRank || "-"}</p>
+              <p className="text-xs text-muted-foreground uppercase">Sua Posição</p>
             </div>
             <div>
-              <p className="text-2xl font-bold text-primary">
-                {currentUserData?.totalPoints || 0}
-              </p>
-              <p className="text-sm text-muted-foreground">Pontos PIFE</p>
+              <p className="text-2xl font-black text-primary">{currentUserData?.totalPoints || 0}</p>
+              <p className="text-xs text-muted-foreground uppercase">Pontos</p>
             </div>
             <div>
-              <p className="text-2xl font-bold text-orange-500">
-                {currentUserData?.streak || 0}
-              </p>
-              <p className="text-sm text-muted-foreground">Streak Atual</p>
+              <p className="text-2xl font-black text-orange-500">{currentUserData?.streak || 0}</p>
+              <p className="text-xs text-muted-foreground uppercase">Streak</p>
             </div>
             <div>
-              <p className="text-2xl font-bold text-green-500">
-                {currentUserData?.monthlyCheckins || 0}
-              </p>
-              <p className="text-sm text-muted-foreground">Este Mês</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* PIFE Methodology Info */}
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Flame className="h-5 w-5" />
-            Metodologia PIFE
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center p-4 rounded-lg bg-blue-50 border border-blue-200">
-              <div className="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center mx-auto mb-2">
-                <Briefcase className="h-4 w-4" />
-              </div>
-              <p className="font-semibold text-blue-700">Profissional</p>
-              <p className="text-xs text-blue-600">Atividades profissionais</p>
-            </div>
-            <div className="text-center p-4 rounded-lg bg-green-50 border border-green-200">
-              <div className="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center mx-auto mb-2">
-                <BookOpen className="h-4 w-4" />
-              </div>
-              <p className="font-semibold text-green-700">Intelectual</p>
-              <p className="text-xs text-green-600">
-                Desenvolvimento intelectual
-              </p>
-            </div>
-            <div className="text-center p-4 rounded-lg bg-purple-50 border border-purple-200">
-              <div className="w-8 h-8 rounded-full bg-purple-500 text-white flex items-center justify-center mx-auto mb-2">
-                <Dumbbell className="h-4 w-4" />
-              </div>
-              <p className="font-semibold text-purple-700">Físico</p>
-              <p className="text-xs text-purple-600">Atividades físicas</p>
-            </div>
-            <div className="text-center p-4 rounded-lg bg-orange-50 border border-orange-200">
-              <div className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center mx-auto mb-2">
-                <Heart className="h-4 w-4" />
-              </div>
-              <p className="font-semibold text-orange-700">Emocional</p>
-              <p className="text-xs text-orange-600">Bem-estar emocional</p>
+              <p className="text-2xl font-black text-green-500">{currentUserData?.monthlyCheckins || 0}</p>
+              <p className="text-xs text-muted-foreground uppercase">Este Mês</p>
             </div>
           </div>
         </CardContent>
@@ -250,51 +168,22 @@ export default function RankingPIFEPage({
 
       <Tabs defaultValue="geral" className="space-y-6">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="geral">Ranking Geral</TabsTrigger>
-          <TabsTrigger value="mensal">Mensal</TabsTrigger>
+          <TabsTrigger value="geral">GERAL</TabsTrigger>
+          <TabsTrigger value="mensal">MENSAL</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="geral" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Ranking Geral PIFE</h3>
-            <Badge variant="outline">Baseado em pontos PIFE totais</Badge>
-          </div>
-          <div className="space-y-3">
-            {pifeRanking.map((user, index) => (
-              <PIFERankingCard
-                key={user.id}
-                user={user}
-                rank={index + 1}
-                period="geral"
-                currentUserId={currentUserId}
-              />
-            ))}
-          </div>
+        <TabsContent value="geral" className="space-y-3">
+          {pifeRanking.map((user, index) => (
+            <PIFERankingCard key={user.id} user={user} rank={index + 1} period="geral" currentUserId={currentUserId} />
+          ))}
         </TabsContent>
 
-        <TabsContent value="mensal" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Ranking Mensal</h3>
-            <Badge variant="outline">Check-ins deste mês</Badge>
-          </div>
-          <div className="space-y-3">
-            {[...pifeRanking]
-              .sort((a, b) => {
-                if (b.monthlyPoints !== a.monthlyPoints) {
-                  return b.monthlyPoints - a.monthlyPoints;
-                }
-                return b.streak - a.streak;
-              })
-              .map((user, index) => (
-                <PIFERankingCard
-                  key={user.id}
-                  user={user}
-                  rank={index + 1}
-                  period="mensal"
-                  currentUserId={currentUserId}
-                />
-              ))}
-          </div>
+        <TabsContent value="mensal" className="space-y-3">
+          {[...pifeRanking]
+            .sort((a, b) => b.monthlyPoints - a.monthlyPoints)
+            .map((user, index) => (
+              <PIFERankingCard key={user.id} user={user} rank={index + 1} period="mensal" currentUserId={currentUserId} />
+            ))}
         </TabsContent>
       </Tabs>
     </div>
