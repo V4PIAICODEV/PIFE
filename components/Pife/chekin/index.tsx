@@ -258,11 +258,21 @@ export default function CheckinPage({
                 </Card>
 
                 <Card>
-                  <CardHeader><CardTitle>3. Detalhes</CardTitle></CardHeader>
+                  <CardHeader>
+                    <CardTitle>3. Detalhes</CardTitle>
+                    {/* Aviso de 10 caracteres adicionado conforme solicitado */}
+                    <CardDescription className="text-orange-500 font-medium">
+                      Mínimo de 10 caracteres para a descrição.
+                    </CardDescription>
+                  </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
                       <Label>Descrição</Label>
                       <Textarea {...register("description")} placeholder="O que você fez hoje?" rows={4} className="mt-2" />
+                      {/* Contador e aviso dinâmico */}
+                      <p className={`text-[10px] mt-1 ${description?.length < 10 ? "text-orange-500" : "text-muted-foreground"}`}>
+                        {description?.length || 0}/500 caracteres {(description?.length < 10) && "(Mínimo 10)"}
+                      </p>
                     </div>
                     {selectedEvidence === EVIDENCE_TYPES.LINK && (
                       <div><Label>Link</Label><Input {...register("link")} placeholder="https://..." className="mt-2" /></div>
@@ -273,7 +283,11 @@ export default function CheckinPage({
                   </CardContent>
                 </Card>
 
-                <Button type="submit" disabled={isSubmitting} className="w-full h-12 text-lg">
+                <Button 
+                  type="submit" 
+                  disabled={isSubmitting || (description?.length < 10)} 
+                  className="w-full h-12 text-lg"
+                >
                   {isSubmitting ? "Enviando..." : "Fazer Check-in (+10 pontos)"}
                 </Button>
               </>
