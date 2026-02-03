@@ -17,10 +17,14 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { createClient } from "@supabase/supabase-js";
 
-// Configuração do Cliente Supabase
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// CONFIGURAÇÃO SEGURA DO SUPABASE
+// Isso evita o erro "supabaseUrl is required" se as variáveis estiverem vazias
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+
+const supabase = (supabaseUrl && supabaseAnonKey) 
+  ? createClient(supabaseUrl, supabaseAnonKey) 
+  : null;
 
 interface UserData {
   id: string;
@@ -76,19 +80,21 @@ export default function ConfiguracoesPage({ userData }: { userData: UserData }) 
     try {
       let imageUrl = userData.image;
 
-      // 1. Lógica de Upload para o Supabase Storage
+      // 1. Lógica de Upload para o Supabase Storage (Só roda se houver imagem e o cliente estiver ativo)
       if (profileImage) {
+        if (!supabase) {
+          throw new Error("Configuração do Supabase ausente. Verifique as variáveis de ambiente na Vercel.");
+        }
+
         const fileExt = profileImage.name.split('.').pop();
         const fileName = `${userData.id}-${Math.random()}.${fileExt}`;
         const filePath = `avatars/${fileName}`;
 
         const { error: uploadError } = await supabase.storage
-          .from('pife-uploads') // Certifique-se de que o bucket existe e é público!
+          .from('pife-uploads')
           .upload(filePath, profileImage);
 
-        if (uploadError) {
-          throw new Error("Erro ao subir imagem para o Supabase");
-        }
+        if (uploadError) throw uploadError;
 
         const { data: { publicUrl } } = supabase.storage
           .from('pife-uploads')
@@ -97,17 +103,17 @@ export default function ConfiguracoesPage({ userData }: { userData: UserData }) 
         imageUrl = publicUrl;
       }
 
-      // 2. Enviar dados finais para a sua API interna
+      // 2. Enviar dados finais para a API
       const payload = {
         name: data.name,
         squadId: data.squad === "none" ? null : data.squad,
-        image: imageUrl, // Aqui vai a URL da imagem
+        image: imageUrl,
       };
 
       await makeRequest({
         url: "/api/v4/user/profile",
         method: "PUT",
-        body: payload, // Enviamos como JSON agora, já que a imagem é só uma URL
+        body: payload,
         showSuccessToast: true,
       });
 
@@ -136,13 +142,19 @@ export default function ConfiguracoesPage({ userData }: { userData: UserData }) 
     <div className="container mx-auto p-6">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-foreground mb-2">Configurações</h1>
-        <p className="text-muted-foreground">Bem-vindo, <span className="text-primary font-bold">{userData.name.split(" ")[0]}</span></p>
+        {/* Saudação personalizada com o primeiro nome */}
+        <p className="text-muted-foreground">
+          Bem-vindo, <span className="text-primary font-bold">{userData.name.split(" ")[0]}</span>
+        </p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmitProfile)} className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Camera className="h-5 w-5" />Foto de Perfil</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Camera className="h-5 w-5" />
+              Foto de Perfil
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center gap-6">
@@ -157,8 +169,9 @@ export default function ConfiguracoesPage({ userData }: { userData: UserData }) 
               </div>
               <div className="space-y-2">
                 <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
-                  <Upload className="h-4 w-4 mr-2" /> Alterar Foto
+                  <Upload className="h-4 w-4 mr-2" /> Escolher Foto
                 </Button>
+                {!supabase && <p className="text-[10px] text-red-500">Atenção: Supabase não configurado na Vercel.</p>}
                 <input ref={fileInputRef} type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
               </div>
             </div>
@@ -167,7 +180,7 @@ export default function ConfiguracoesPage({ userData }: { userData: UserData }) 
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><User className="h-5 w-5" />Seus Dados</CardTitle>
+            <CardTitle className="flex items-center gap-2"><User className="h-5 w-5" />Dados da Conta</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -181,19 +194,23 @@ export default function ConfiguracoesPage({ userData }: { userData: UserData }) 
                   <SelectValue placeholder="Selecione seu squad" />
                 </SelectTrigger>
                 <SelectContent>
-                  {realSquads.map((squad) => (
-                    <SelectItem key={squad.id} value={squad.id}>{squad.name}</SelectItem>
-                  ))}
+                  {realSquads.length > 0 ? (
+                    realSquads.map((squad) => (
+                      <SelectItem key={squad.id} value={squad.id}>{squad.name}</SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="none" disabled>Carregando squads...</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
             </div>
           </CardContent>
         </Card>
 
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-4">
           <Button type="submit" disabled={isSubmitting}>
             <Save className="h-4 w-4 mr-2" />
-            {isSubmitting ? "Salvando..." : "Salvar Alterações"}
+            {isSubmitting ? "Salvando..." : "Salvar Configurações"}
           </Button>
         </div>
       </form>
